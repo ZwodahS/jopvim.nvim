@@ -4,6 +4,10 @@ local Path = require('plenary.path')
 
 local M = {}
 
+local _JOPLIN_WHITELIST_NOTES_METADATA = {
+  "title"
+}
+
 _JOPLIN_CFG = {
   token_path = nil,
   token = nil,
@@ -91,14 +95,39 @@ local function put(url, request)
   return response
 end
 
-local function downloadFile(id)
-  if open == nil then open = true end
-  local response = get("/notes/" .. id, { query = { fields = 'body' } })
+local function downloadNote(id)
+  local response = get("/notes/" .. id, { query = { fields = 'body,title' } })
   if response.status == 200 then
-    local path = saveNoteToLocal(id, response.json.body)
+    local data = {'```'}
+    table.insert(data, 'title:'..response.json.title)
+    table.insert(data, '```')
+    table.insert(data, response.json.body)
+    local path = saveNoteToLocal(id, table.concat(data, "\n"))
     return path
   end
   return nil
+end
+
+local function splitNoteData(fileData)
+  local metadata = {}
+  local body = {}
+  local lNo = 1
+  if (fileData[1]:find('```', 1, true) == 1) then -- if start with ``` then we treat it as metadata
+    lNo = 2
+    while (fileData[lNo]:find('```', 1, true) ~= 1) do
+      local line = fileData[lNo]
+      local index = line:find(':', 1, true)
+      if index ~= nil then
+        metadata[line:sub(1, index-1)] = line:sub(index + 1, #line)
+      end
+      lNo = lNo + 1
+    end
+    lNo = lNo + 1
+  end
+  for i=lNo,#fileData,1 do
+    table.insert(body, fileData[i])
+  end
+  return metadata, table.concat(body, "\n")
 end
 
 local function uploadFile(id)
@@ -109,8 +138,22 @@ local function uploadFile(id)
     return
   end
   -- read the file
-  local t = f:read("*all")
-  local body = vim.fn.json_encode({ body = t })
+  local fileData = {}
+  for line in f:lines() do
+    fileData[#fileData + 1] = line
+  end
+  -- get the metadata
+  local metadata, body = splitNoteData(fileData)
+  -- construct the request json body
+  local jsonBody = { body = body }
+  for _, key in ipairs(_JOPLIN_WHITELIST_NOTES_METADATA) do
+    if metadata[key] ~= nil then
+      jsonBody[key] = metadata[key]
+    end
+  end
+  -- @todo need to update the index with the new notes' title so we don't have to fetch the index
+  -- update the note
+  local body = vim.fn.json_encode(jsonBody)
   local request = { body = body }
   local response = put('/notes/' .. id, request)
 end
@@ -218,7 +261,7 @@ M.getNotesIndex = function()
 end
 
 M.openNote = function(id)
-  local path = downloadFile(id)
+  local path = downloadNote(id)
   if path ~= nil then vim.cmd("edit" .. path) end
 end
 
