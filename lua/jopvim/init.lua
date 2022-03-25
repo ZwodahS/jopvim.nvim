@@ -96,10 +96,11 @@ local function put(url, request)
 end
 
 local function downloadNote(id)
-  local response = get("/notes/" .. id, { query = { fields = 'body,title' } })
+  local response = get("/notes/" .. id, { query = { fields = 'body,title,is_todo' } })
   if response.status == 200 then
     local data = {'```'}
     table.insert(data, 'title:'..response.json.title)
+    table.insert(data, 'is_todo:'..response.json.is_todo)
     table.insert(data, '```')
     table.insert(data, response.json.body)
     local path = saveNoteToLocal(id, table.concat(data, "\n"))
