@@ -1,15 +1,16 @@
-local pickers = require("telescope.pickers")
-local finders = require("telescope.finders")
-local conf = require("telescope.config").values
-local actions = require("telescope.actions")
-local action_state = require("telescope.actions.state")
-local jop = require("jopvim")
+local pickers = require('telescope.pickers')
+local finders = require('telescope.finders')
+local conf = require('telescope.config').values
+local actions = require('telescope.actions')
+local action_state = require('telescope.actions.state')
+local index = require('jopvim.index')
+local jopvim = require('jopvim')
 
 local M = {}
 -- our picker function: colors
 M.joplin_notes = function(opts)
   opts = opts or {}
-  local index = jop.getNotesIndex()
+  local index = index.get()
   local data = {}
   for k in pairs(index) do
     local v = index[k]
@@ -34,7 +35,7 @@ M.joplin_notes = function(opts)
       actions.select_default:replace(function()
         actions.close(prompt_bufnr)
         local selection = action_state.get_selected_entry()
-        jop.openNote(selection.value[2])
+        jopvim.openNote(selection.value[2])
       end)
       return true
     end
