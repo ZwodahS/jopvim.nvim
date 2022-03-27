@@ -12,7 +12,7 @@ local function getFullFolderName(index, id)
     local parent_name = getFullFolderName(index, index[id].parent_id)
     local fullname = index[id].title
     if parent_name ~= '' then
-      fullname = parent_name .. '/' .. fullname
+      fullname = parent_name .. ' > ' .. fullname
     end
     index[id].fullname = fullname
   end
@@ -60,7 +60,7 @@ M.update = function()
     local fparent = getFullFolderName(index, notesIndex[nid].parent_id)
     local parent = getFolderName(index, notesIndex[nid].parent_id)
     local fullname = notesIndex[nid].title
-    if fparent ~= nil then fullname = fparent .. "/" .. fullname end
+    if fparent ~= nil then fullname = fparent .. " > " .. fullname end
     index[nid].fullname = fullname
     index[nid].parentname = parent
   end
@@ -84,7 +84,7 @@ M.refreshNote = function(nid, note)
     local parent = getFolderName(index, note.parent_id)
     local fullname = note.title
 
-    if fparent ~= nil then fullname = fparent .. "/" .. fullname end
+    if fparent ~= nil then fullname = fparent .. " > " .. fullname end
 
     -- @todo: perhaps should move this to a common function
     index[nid] = {

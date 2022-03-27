@@ -106,7 +106,7 @@ M.createNote = function(parent_id)
   local data = { title = "", parent_id = parent_id, body = "" }
   local jsonData = vim.fn.json_encode(data)
   local response = post("/notes", { body = jsonData })
-  if response.code == 200 then
+  if response.status == 200 then
     return response.json.id
   end
   return nil

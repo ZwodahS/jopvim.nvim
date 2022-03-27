@@ -75,7 +75,14 @@ end
 
 M.openNote = function(id)
   local path = downloadNote(id)
+  print(id)
   if path ~= nil then vim.cmd("edit" .. path) end
+end
+
+M.create_note = function(fid, open_note)
+  local nid = api.createNote(fid)
+  if nid == nil then return end
+  if open_note == true then M.openNote(nid) end
 end
 
 M.setup = function(cfg)
