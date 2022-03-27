@@ -38,10 +38,20 @@ The plugin works by creating a index of all the notes. Updating the notes index 
 
 You can update the note index by running `:JopvimUpdateIndex`
 
-Once you have a note index, you can search the index via telescope via `lua require("jopvim.telescope").joplin_notes()`. No default mapping is provide.
+### Searching Notes
+`lua require("jopvim.telescope").joplin_notes()`
+
+You can bind the this to whatever mapping you desire. No default mapping is provided.
 
 The default action will open the notes. It will download the note and store it in `.cache/nvim/jop/*`.
 Anytime the file is saved, a put request will be sent to Joplin to update the note.
+
+### Searching Folders
+`lua require("jopvim.telescope").joplin_folders()`
+
+You can bind the this to whatever mapping you desire. No default mapping is provided.
+
+The default action will create a note in the folder, and a new note will be open in nvim.
 
 ## Disclaimer
 This plugin lacks features, and might be buggy. Although I am personally using, there might be bug and I am not responsible for any data loss.
