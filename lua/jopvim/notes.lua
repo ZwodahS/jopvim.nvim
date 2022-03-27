@@ -2,7 +2,7 @@ local cache = require('jopvim.cache')
 
 local M = {}
 M.get_tmp_note_path = function(id)
-  return cache.get_cacheFileName(id .. ".jop.md")
+  return cache.get_cache_file_name(id .. ".jop.md")
 end
 
 M.save_note_to_local = function(id, str)

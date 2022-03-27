@@ -27,7 +27,7 @@ end
 local function save_index(index)
   local encoded = vim.fn.json_encode(index)
   local index_path = util.joinPath(vim.fn.stdpath("cache"), "jop", 'notes.index')
-  cache.saveToCache(index_path, encoded)
+  cache.save_to_cache(index_path, encoded)
 end
 
 M.get = function()
