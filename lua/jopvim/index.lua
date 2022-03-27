@@ -4,12 +4,12 @@ local util = require('jopvim.util')
 
 local M = {}
 
-local function getFullFolderName(index, id)
+local function get_folder_fullname(index, id)
   if index[id] == nil then
     return ''
   end
   if index[id].fullname == nil then
-    local parent_name = getFullFolderName(index, index[id].parent_id)
+    local parent_name = get_folder_fullname(index, index[id].parent_id)
     local fullname = index[id].title
     if parent_name ~= '' then
       fullname = parent_name .. ' > ' .. fullname
@@ -19,19 +19,19 @@ local function getFullFolderName(index, id)
   return index[id].fullname
 end
 
-local function getFolderName(index, id)
+local function get_foldername(index, id)
   if index[id] == nil then return '' end
   return index[id].title
 end
 
-local function saveIndex(index)
+local function save_index(index)
   local encoded = vim.fn.json_encode(index)
   local index_path = util.joinPath(vim.fn.stdpath("cache"), "jop", 'notes.index')
   cache.saveToCache(index_path, encoded)
 end
 
 M.get = function()
-  local index = cache.getCache('notes.index', true)
+  local index = cache.get_cache('notes.index', true)
   return index
 end
 
@@ -39,16 +39,16 @@ M.update = function()
   -- Mon 11:32:41 14 Mar 2022
   -- not sure how to do this better
   -- fetch all the folders first
-  local index = api.getAllFolders()
+  local index = api.get_all_folders()
   -- for each of the folders, we set the full title
   for id in pairs(index) do
     -- just precompute all the folder name
-    getFullFolderName(index, id)
+    get_folder_fullname(index, id)
   end
   local notesIndex = {}
   -- for each folder, also index the notes in it
   for id in pairs(index) do
-    local notes = api.getNotesInFolder(id)
+    local notes = api.get_notes_in_folders(id)
     for nid in pairs(notes) do
       notesIndex[nid] = notes[nid]
     end
@@ -57,17 +57,17 @@ M.update = function()
   for nid in pairs(notesIndex) do
     index[nid] = notesIndex[nid]
     index[nid].type = 1
-    local fparent = getFullFolderName(index, notesIndex[nid].parent_id)
-    local parent = getFolderName(index, notesIndex[nid].parent_id)
+    local fparent = get_folder_fullname(index, notesIndex[nid].parent_id)
+    local parent = get_foldername(index, notesIndex[nid].parent_id)
     local fullname = notesIndex[nid].title
     if fparent ~= nil then fullname = fparent .. " > " .. fullname end
     index[nid].fullname = fullname
     index[nid].parentname = parent
   end
-  saveIndex(index)
+  save_index(index)
 end
 
-M.refreshNote = function(nid, note)
+M.refresh_note = function(nid, note)
   local index = M.get()
   -- check if the note exists
   if note == nil then -- note got deleted ?
@@ -80,8 +80,8 @@ M.refreshNote = function(nid, note)
     if note.parent_id == nil and prev ~= nil then
       note.parent_id = prev.parent_id
     end
-    local fparent = getFullFolderName(index, note.parent_id)
-    local parent = getFolderName(index, note.parent_id)
+    local fparent = get_folder_fullname(index, note.parent_id)
+    local parent = get_foldername(index, note.parent_id)
     local fullname = note.title
 
     if fparent ~= nil then fullname = fparent .. " > " .. fullname end
@@ -92,7 +92,7 @@ M.refreshNote = function(nid, note)
       parent_id = note.parent_id, title = note.title
     }
   end
-  saveIndex(index)
+  save_index(index)
 end
 
 return M

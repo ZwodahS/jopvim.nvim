@@ -1,12 +1,12 @@
 local util = require("jopvim.util")
 local M = {}
 
-M.getCacheFileName = function(filename)
+M.get_cache_file_name = function(filename)
   return util.joinPath(vim.fn.stdpath("cache"), "jop", filename)
 end
 
-M.getCache = function(filename, decode_json)
-  local path = M.getCacheFileName(filename)
+M.get_cache = function(filename, decode_json)
+  local path = M.get_cache_file_name(filename)
   local f = io.open(path, "r")
   if f == nil then
       return nil
@@ -20,7 +20,7 @@ M.getCache = function(filename, decode_json)
   return j
 end
 
-M.saveToCache = function(path, str)
+M.save_to_cache = function(path, str)
   local f = io.open(path, "w")
   if f == nil then
     return

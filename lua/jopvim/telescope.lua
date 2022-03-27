@@ -35,7 +35,7 @@ M.joplin_notes = function(opts)
       actions.select_default:replace(function()
         actions.close(prompt_bufnr)
         local selection = action_state.get_selected_entry()
-        jopvim.openNote(selection.value[2])
+        jopvim.open_note(selection.value[2])
       end)
       return true
     end

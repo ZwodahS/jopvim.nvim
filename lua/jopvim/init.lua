@@ -6,7 +6,7 @@ local util = require('jopvim.util')
 
 local M = {}
 
-local function splitNoteData(fileData)
+local function split_note_data(fileData)
   local metadata = {}
   local body = {}
   local lNo = 1
@@ -32,10 +32,10 @@ local _JOPLIN_WHITELIST_NOTES_METADATA = {
   "title", "is_todo"
 }
 
-M.saveFile = function()
+M.on_bufWritePost = function()
   local id = vim.fn.fnamemodify(vim.fn.expand('%:t:r'), ":r")
   if id ~= nil then
-    local path = notes.getTmpNotePath(id)
+    local path = notes.get_tmp_note_path(id)
     local f= io.open(path, "r")
     if f == nil then
       return
@@ -46,20 +46,20 @@ M.saveFile = function()
       fileData[#fileData + 1] = line
     end
     -- get the metadata
-    local metadata, body = splitNoteData(fileData)
+    local metadata, body = split_note_data(fileData)
     local note = { body = body }
     for _, key in ipairs(_JOPLIN_WHITELIST_NOTES_METADATA) do
       if metadata[key] ~= nil then
         note[key] = metadata[key]
       end
     end
-    api.updateNote(id, note)
-    index.refreshNote(id, note)
+    api.update_note(id, note)
+    index.refresh_note(id, note)
   end
 end
 
-local downloadNote = function(id)
-  local note = api.getNote(id, 'body,title,is_todo')
+local download_note = function(id)
+  local note = api.get_note(id, 'body,title,is_todo')
 
   if note == nil then return nil end
 
@@ -69,32 +69,32 @@ local downloadNote = function(id)
   table.insert(data, '```')
   table.insert(data, note.body)
 
-  local path = notes.saveNoteToLocal(id, table.concat(data, "\n"))
+  local path = notes.save_note_to_local(id, table.concat(data, "\n"))
   return path
 end
 
-M.openNote = function(id)
-  local path = downloadNote(id)
+M.open_note = function(id)
+  local path = download_note(id)
   print(id)
   if path ~= nil then vim.cmd("edit" .. path) end
 end
 
 M.create_note = function(fid, open_note)
-  local nid = api.createNote(fid)
+  local nid = api.create_note(fid)
   if nid == nil then return end
-  if open_note == true then M.openNote(nid) end
+  if open_note == true then M.open_note(nid) end
 end
 
 M.setup = function(cfg)
   conf.setup(cfg)
   -- create the tmp directory if does not exists
-  local rootDir = Path:new(util.getRootDir())
+  local rootDir = Path:new(util.get_root_dir())
   if not rootDir:exists() then
     rootDir:mkdir()
   end
   -- set up autocmd
   vim.cmd([[
-    autocmd BufWritePost *.jop.md lua require('jopvim').saveFile()
+    autocmd BufWritePost *.jop.md lua require('jopvim').on_bufWritePost()
     command! JopvimUpdateIndex lua require('jopvim.index').update()
   ]])
 end

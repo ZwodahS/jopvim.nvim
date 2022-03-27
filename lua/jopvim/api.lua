@@ -9,12 +9,12 @@ local _JOPLIN_WHITELIST_NOTES_METADATA = {
 
 -- Wrap various api of joplin. Implement on a need basis
 
-local function getServerURL()
+local function get_serverURL()
   return 'http://' .. c.config.url .. ":" .. c.config.port
 end
 
 local function post(url, request)
-  url = getServerURL() .. url
+  url = get_serverURL() .. url
   if request.query == nil then
     request.query = {}
   end
@@ -28,7 +28,7 @@ local function post(url, request)
 end
 
 local function put(url, request)
-  url = getServerURL() .. url
+  url = get_serverURL() .. url
   if request.query == nil then
     request.query = {}
   end
@@ -42,7 +42,7 @@ local function put(url, request)
 end
 
 local function get(url, request)
-  url = getServerURL() .. url
+  url = get_serverURL() .. url
   if request.query == nil then
     request.query = {}
   end
@@ -57,14 +57,14 @@ end
 
 local M = {}
 
-M.updateNote = function(id, note)
+M.update_note = function(id, note)
   local body = vim.fn.json_encode(note)
   local request = { body = body }
   local response = put('/notes/' .. id, request)
   return response.json
 end
 
-M.getAllFolders = function()
+M.get_all_folders = function()
   local folders = {}
   local has_next = true
   local page = 1
@@ -80,13 +80,13 @@ M.getAllFolders = function()
   return folders
 end
 
-M.getNote = function(id, fields)
+M.get_note = function(id, fields)
   local response = get("/notes/" .. id, { query = { fields = fields } })
   if response.status ~= 200 then return nil end
   return response.json
 end
 
-M.getNotesInFolder = function(id)
+M.get_notes_in_folders = function(id)
   local notes = {}
   local has_next = true
   local page = 1
@@ -102,7 +102,7 @@ M.getNotesInFolder = function(id)
   return notes
 end
 
-M.createNote = function(parent_id)
+M.create_note = function(parent_id)
   local data = { title = "", parent_id = parent_id, body = "" }
   local jsonData = vim.fn.json_encode(data)
   local response = post("/notes", { body = jsonData })

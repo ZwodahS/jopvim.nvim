@@ -5,7 +5,7 @@ M.joinPath = function(...)
   return table.concat(vim.tbl_flatten({ ... }), path_sep)
 end
 
-M.getRootDir = function()
+M.get_root_dir = function()
   return M.joinPath(vim.fn.stdpath("cache"), "jop")
 end
 
