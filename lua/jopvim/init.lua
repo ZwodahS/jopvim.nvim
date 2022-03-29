@@ -54,7 +54,7 @@ M.on_bufWritePost = function()
       end
     end
     api.update_note(id, note)
-    index.refresh_note(id, note)
+    index.update_note(id, note)
   end
 end
 
@@ -82,6 +82,10 @@ end
 M.create_note = function(fid, open_note)
   local nid = api.create_note(fid)
   if nid == nil then return end
+  index.update_note(nid, {
+    parent_id = fid,
+    title = '',
+  })
   if open_note == true then M.open_note(nid) end
 end
 

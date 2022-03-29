@@ -67,7 +67,7 @@ M.update = function()
   save_index(index)
 end
 
-M.refresh_note = function(nid, note)
+M.update_note = function(nid, note)
   local index = M.get()
   -- check if the note exists
   if note == nil then -- note got deleted ?
