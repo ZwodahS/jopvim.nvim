@@ -59,7 +59,7 @@ local M = {}
 
 M.update_note = function(id, note)
   local body = vim.fn.json_encode(note)
-  local request = { body = body }
+  local request = { raw_body = body }
   local response = put('/notes/' .. id, request)
   return response.json
 end
