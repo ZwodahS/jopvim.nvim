@@ -79,10 +79,10 @@ M.open_note = function(id)
   if path ~= nil then vim.cmd("edit" .. path) end
 end
 
-M.create_note = function(fid, open_note, title, body)
+M.create_note = function(fid, title, body, open_note)
   title = title or ''
   body = body or ''
-  local nid = api.create_note_with_title_and_body(fid, title, body)
+  local nid = api.create_note(fid, title, body)
   if nid == nil then return end
   index.update_note(nid, {
     parent_id = fid,
