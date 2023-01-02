@@ -79,7 +79,9 @@ M.open_note = function(id)
   if path ~= nil then vim.cmd("edit" .. path) end
 end
 
-M.create_note_with_title_and_body = function(fid, title, body, open_note)
+M.create_note = function(fid, open_note, title, body)
+  title = title or ''
+  body = body or ''
   local nid = api.create_note_with_title_and_body(fid, title, body)
   if nid == nil then return end
   index.update_note(nid, {
@@ -87,10 +89,6 @@ M.create_note_with_title_and_body = function(fid, title, body, open_note)
     title = title,
   })
   if open_note == true then M.open_note(nid) end
-end
-
-M.create_note = function(fid, open_note)
-    return M.create_note_with_title_and_body(fid, "", "", open_note)
 end
 
 M.setup = function(cfg)

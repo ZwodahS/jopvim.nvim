@@ -102,7 +102,9 @@ M.get_notes_in_folders = function(id)
   return notes
 end
 
-M.create_note_with_title_and_body = function(parent_id, title, body)
+M.create_note = function(parent_id, title, body)
+  title = title or ''
+  body = body or ''
   local data = { title = title, parent_id = parent_id, body = body }
   local jsonData = vim.fn.json_encode(data)
   local response = post("/notes", { body = jsonData })
@@ -110,10 +112,6 @@ M.create_note_with_title_and_body = function(parent_id, title, body)
     return response.json.id
   end
   return nil
-end
-
-M.create_note = function(parent_id)
-    return M.create_note_with_title_and_body(parent_id, "", "")
 end
 
 return M
