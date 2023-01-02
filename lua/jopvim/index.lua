@@ -95,4 +95,15 @@ M.update_note = function(nid, note)
   save_index(index)
 end
 
+-- Format is A > B > C
+M.get_object_id_by_fullname = function(fullname)
+  local index = M.get()
+  for id, item in pairs(index) do
+    if item.fullname == fullname then
+      return id
+    end
+  end
+    return nil
+end
+
 return M
