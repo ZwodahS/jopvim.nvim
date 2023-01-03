@@ -69,7 +69,7 @@ M.joplin_folders = function(opts)
       actions.select_default:replace(function()
         actions.close(prompt_bufnr)
         local selection = action_state.get_selected_entry()
-        jopvim.create_note(selection.value[2], true)
+        jopvim.create_note(selection.value[2], "", "", true)
       end)
       return true
     end
