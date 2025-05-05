@@ -13,11 +13,14 @@ local function split_note_data(fileData)
   if (fileData[1]:find('```', 1, true) == 1) then -- if start with ``` then we treat it as metadata
     lNo = 2
     while (fileData[lNo]:find('```', 1, true) ~= 1) do
-      local line = fileData[lNo]
-      local index = line:find(':', 1, true)
-      if index ~= nil then
-        metadata[line:sub(1, index-1)] = line:sub(index + 1, #line)
-      end
+			if fileData[lNo]:sub(1, 2) == '--'  then
+			else
+				local line = fileData[lNo]
+				local index = line:find(':', 1, true)
+				if index ~= nil then
+					metadata[line:sub(1, index-1)] = line:sub(index + 1, #line)
+				end
+			end
       lNo = lNo + 1
     end
     lNo = lNo + 1
@@ -59,6 +62,7 @@ M.on_bufWritePost = function()
 end
 
 local download_note = function(id)
+	if id == '' then return nil end
   local note = api.get_note(id, 'body,title,is_todo')
 
   if note == nil then return nil end
@@ -66,6 +70,9 @@ local download_note = function(id)
   local data = {'```'}
   table.insert(data, 'title:'..note.title)
   table.insert(data, 'is_todo:'..note.is_todo)
+	table.insert(data, '')
+	table.insert(data, '-- id: '..id)
+	table.insert(data, '-- link: [](:/'..id..')')
   table.insert(data, '```')
   table.insert(data, note.body)
 
@@ -75,8 +82,11 @@ end
 
 M.open_note = function(id)
   local path = download_note(id)
-  print(id)
-  if path ~= nil then vim.cmd("edit" .. path) end
+  if path ~= nil then
+		vim.cmd("edit" .. path)
+		return true
+	end
+	return false
 end
 
 M.create_note = function(fid, title, body, open_note)
@@ -89,6 +99,66 @@ M.create_note = function(fid, title, body, open_note)
     title = title,
   })
   if open_note == true then M.open_note(nid) end
+end
+
+M.get_markdown_id_under_cursor = function()
+	-- note that this function is only called in open_file_under_cursor and does not handle the case that
+	-- the cursor is inside ](:/)
+	--
+	-- If the current word is not, then we can check if the current char is wrapped around [](:/)
+	-- If so, then we know it is markdown link, then we should just get the id and open
+	--
+	-- assumption markdown are always in the format (based on joplin file linking format)
+	-- [Text](:/id)
+	-- Observation 1: ](:/ is the pattern we are looking for
+	-- Observation 2: while cursor is on ](:/.........) block, we can assume that cword already took care of it
+	-- Observation 3: Based on 2, we can assume that we are in the [] block or in [
+	--
+	-- Which means to say, we need to find the first ](:/w+) block and open it
+	-- However, there is potential problem if we do this
+	-- We might be outside of the [], so the solution is to look left first and find the first '[',
+	-- but if we encounter a ']' before '[', then we are not in a [] then we return
+	--
+	-- This should works for most cases I think
+	-- Mostly work because we don't have to handle the case inside () as that is taken care of by <cword>
+	-- If we need to, then the ] before [ guard need to be expanded to check for us being in (:/) block
+
+	local line_content = vim.api.nvim_get_current_line()
+	local cursor = vim.api.nvim_win_get_cursor(0)
+	local column = cursor[2] + 1 -- shift the offset
+
+	local line_content_reverse = string.reverse(line_content)
+	local r_column = #line_content - column + 1
+
+	-- check backwards if we are in ] before [
+	local close_index = string.find(line_content_reverse, ']', r_column, true)
+	local open_index = string.find(line_content_reverse, '[', r_column, true)
+
+	-- if we can't find a open bracket then we return since we are not in the [] block
+	if open_index == nil then return nil end
+	-- if close is closer than open, then we just return since we are not in a block
+	if close_index ~= nil and close_index < open_index then return nil end
+
+	-- find the closest ] to the right side, and also the pattern we want to match
+	local close_index = string.find(line_content, ']', column, true)
+	local group_index = string.find(line_content, '](:/', column, true)
+
+	-- these 2 if guard checks for [] that is not [](:/)
+	if close_index == nil or group_index == nil then return nil end
+	if close_index ~= group_index then return nil end
+
+	-- we can just regex it and get the content inside
+	local group = string.match(line_content, '%]%(:/%w+%)', column)
+	if group == nil then return nil end
+
+	return string.sub(group, 5, #group-1)
+end
+
+M.open_file_under_cursor = function()
+	if M.open_note(vim.fn.expand("<cword>")) then return end
+	local id = M.get_markdown_id_under_cursor()
+	if id ~= nil and M.open_note(id) then return end
+	print("joplin note not found.")
 end
 
 M.setup = function(cfg)
@@ -104,4 +174,5 @@ M.setup = function(cfg)
     command! JopvimUpdateIndex lua require('jopvim.index').update()
   ]])
 end
+
 return M
