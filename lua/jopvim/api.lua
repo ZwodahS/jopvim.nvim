@@ -80,6 +80,23 @@ M.get_all_folders = function()
   return folders
 end
 
+M.get_folder = function(id, fields)
+  local response = get("/folders/" .. id, { query = { fields = fields } })
+  if response.status ~= 200 then return nil end
+  return response.json
+end
+
+M.get_folder_full_path = function(id)
+  if id == nil then return '' end
+
+  local folder = M.get_folder(id, 'title,parent_id')
+  if folder == nil then return '' end
+  if folder.title == nil then return '' end
+  if folder.parent_id == nil then return folder.title end
+
+  return M.get_folder_full_path(folder.parent_id)..'/'..folder.title
+end
+
 M.get_note = function(id, fields)
   local response = get("/notes/" .. id, { query = { fields = fields } })
   if response.status ~= 200 then return nil end

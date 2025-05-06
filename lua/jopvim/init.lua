@@ -62,17 +62,20 @@ M.on_bufWritePost = function()
 end
 
 local download_note = function(id)
-	if id == '' then return nil end
-  local note = api.get_note(id, 'body,title,is_todo')
+  if id == '' then return nil end
+  local note = api.get_note(id, 'body,title,is_todo,source_url,parent_id')
 
   if note == nil then return nil end
+
+  local full_path = api.get_folder_full_path(note.parent_id)
 
   local data = {'```'}
   table.insert(data, 'title:'..note.title)
   table.insert(data, 'is_todo:'..note.is_todo)
-	table.insert(data, '')
-	table.insert(data, '-- id: '..id)
-	table.insert(data, '-- link: [](:/'..id..')')
+  table.insert(data, '')
+  table.insert(data, '-- id: '..id)
+  table.insert(data, '-- link: [](:/'..id..')')
+  table.insert(data, '-- directory: '..full_path)
   table.insert(data, '```')
   table.insert(data, note.body)
 
