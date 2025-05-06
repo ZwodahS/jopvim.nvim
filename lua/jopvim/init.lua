@@ -37,28 +37,34 @@ local _JOPLIN_WHITELIST_NOTES_METADATA = {
 
 M.on_bufWritePost = function()
   local id = vim.fn.fnamemodify(vim.fn.expand('%:t:r'), ":r")
-  if id ~= nil then
-    local path = notes.get_tmp_note_path(id)
-    local f= io.open(path, "r")
-    if f == nil then
-      return
-    end
-    -- read the file
-    local fileData = {}
-    for line in f:lines() do
-      fileData[#fileData + 1] = line
-    end
-    -- get the metadata
-    local metadata, body = split_note_data(fileData)
-    local note = { body = body }
-    for _, key in ipairs(_JOPLIN_WHITELIST_NOTES_METADATA) do
-      if metadata[key] ~= nil then
-        note[key] = metadata[key]
-      end
-    end
-    api.update_note(id, note)
-    index.update_note(id, note)
-  end
+	if id == nil then return end
+
+	local path = notes.get_tmp_note_path(id)
+	local f= io.open(path, "r")
+	if f == nil then return end
+
+	-- read the file
+	local fileData = {}
+	for line in f:lines() do
+		fileData[#fileData + 1] = line
+	end
+
+	-- get the metadata
+	local metadata, body = split_note_data(fileData)
+
+	if metadata["type"] == "note" then
+		local note = { body = body }
+		for _, key in ipairs(_JOPLIN_WHITELIST_NOTES_METADATA) do
+			if metadata[key] ~= nil then
+				note[key] = metadata[key]
+			end
+		end
+		api.update_note(id, note)
+		index.update_note(id, note)
+	elseif metadata["type"] == "folder" then
+		-- folder don't get updated for now
+	end
+
 end
 
 local download_note = function(id)
@@ -70,12 +76,15 @@ local download_note = function(id)
   local full_path = api.get_folder_full_path(note.parent_id)
 
   local data = {'```'}
+	table.insert(data, 'type:note')
   table.insert(data, 'title:'..note.title)
   table.insert(data, 'is_todo:'..note.is_todo)
   table.insert(data, '')
   table.insert(data, '-- id: '..id)
   table.insert(data, '-- link: [](:/'..id..')')
-  table.insert(data, '-- directory: '..full_path)
+	if note.parent_id ~= nil then
+		table.insert(data, '-- directory: '..'['..full_path..'](:/'..note.parent_id..')')
+	end
   table.insert(data, '```')
   table.insert(data, note.body)
 
@@ -83,8 +92,50 @@ local download_note = function(id)
   return path
 end
 
+local download_folder = function(id)
+	if id == '' then return nil end
+	local folder = api.get_folder(id, 'title,parent_id')
+	if folder == nil then return nil end
+
+  local full_path = api.get_folder_full_path(folder.parent_id)
+
+  local data = {'```'}
+	table.insert(data, 'type:folder')
+  table.insert(data, 'title:'..folder.title)
+  table.insert(data, '')
+  table.insert(data, '-- id: '..id)
+  table.insert(data, '-- link: [](:/'..id..')')
+	if folder.parent_id ~= nil then
+		table.insert(data, '-- directory: '..'['..full_path..']('..folder.parent_id..')')
+	end
+	table.insert(data, '-- This is a folder. Any changes made here are temporary.')
+  table.insert(data, '```')
+
+	-- Tue 15:53:59 06 May 2025
+	-- Not sure yet how best to get and display folder. Might have to do it from cache as joplin
+	-- does not provide the api to get folders in folder.
+  table.insert(data, '')
+  table.insert(data, '# Notes in Folder')
+	local folder_notes = api.get_notes_in_folders(id)
+	for key, note in pairs(folder_notes) do
+		table.insert(data, '- ['..note.title..'](:/'..key..')')
+	end
+
+	local path = notes.save_note_to_local(id, table.concat(data, "\n"))
+	return path
+end
+
 M.open_note = function(id)
   local path = download_note(id)
+  if path ~= nil then
+		vim.cmd("edit" .. path)
+		return true
+	end
+	return false
+end
+
+M.open_folder = function(id)
+  local path = download_folder(id)
   if path ~= nil then
 		vim.cmd("edit" .. path)
 		return true
@@ -158,10 +209,13 @@ M.get_markdown_id_under_cursor = function()
 end
 
 M.open_file_under_cursor = function()
-	if M.open_note(vim.fn.expand("<cword>")) then return end
-	local id = M.get_markdown_id_under_cursor()
+	local id = vim.fn.expand("<cword>")
+	if M.open_note(id) then return end
+	if M.open_folder(id) then return end
+	id = M.get_markdown_id_under_cursor()
 	if id ~= nil and M.open_note(id) then return end
-	print("joplin note not found.")
+	if id ~= nil and M.open_folder(id) then return end
+	print("joplin note/folder not found.")
 end
 
 M.setup = function(cfg)
