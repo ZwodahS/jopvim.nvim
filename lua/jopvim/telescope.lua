@@ -7,18 +7,16 @@ local index = require('jopvim.index')
 local jopvim = require('jopvim')
 
 local M = {}
--- our picker function: colors
-M.joplin_notes = function(opts)
-  opts = opts or {}
-  local index = index.get()
+M.joplin_notes_picker = function(opts)
   local data = {}
+  local index = index.get()
   for k in pairs(index) do
     local v = index[k]
     if v["type"] == 1 then
       table.insert(data, {v.title .. ' | ' .. v.parentname, v.id})
     end
   end
-  pickers.new(opts, {
+  return pickers.new(opts, {
     prompt_title = "Joplin Notes",
     finder = finders.new_table({
       results = data,
@@ -31,15 +29,43 @@ M.joplin_notes = function(opts)
       end
     }),
     sorter = conf.generic_sorter(opts),
-    attach_mappings = function(prompt_bufnr, map)
-      actions.select_default:replace(function()
-        actions.close(prompt_bufnr)
-        local selection = action_state.get_selected_entry()
-        jopvim.open_note(selection.value[2])
-      end)
-      return true
-    end
-  }):find()
+  })
+end
+
+M.joplin_insert_link = function(opts)
+  opts = opts or {}
+	local buf = vim.api.nvim_get_current_buf()
+	opts.attach_mappings = function(prompt_bufnr, map)
+		actions.select_default:replace(function()
+			actions.close(prompt_bufnr)
+			local selection = action_state.get_selected_entry()
+			local id = selection.value[2]
+			local link = jopvim.get_link(id)
+			if link ~= nil then
+				local row = vim.api.nvim_win_get_cursor(0)[1]
+				local col = vim.api.nvim_win_get_cursor(0)[2]
+				local line = vim.api.nvim_get_current_line()
+				vim.api.nvim_buf_set_text(buf, row-1, col, row-1, col, {link})
+			end
+		end)
+		return true
+	end
+	local picker = M.joplin_notes_picker(opts)
+	picker:find()
+end
+
+M.joplin_notes = function(opts)
+  opts = opts or {}
+	opts.attach_mappings = function(prompt_bufnr, map)
+		actions.select_default:replace(function()
+			actions.close(prompt_bufnr)
+			local selection = action_state.get_selected_entry()
+			jopvim.open_note(selection.value[2])
+		end)
+		return true
+	end
+	local picker = M.joplin_notes_picker(opts)
+	picker:find()
 end
 
 M.joplin_folders = function(opts)

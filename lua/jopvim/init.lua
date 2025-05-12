@@ -67,6 +67,21 @@ M.on_bufWritePost = function()
 
 end
 
+M.get_link = function(id)
+  if id == '' then return nil end
+	-- try note
+  local note = api.get_note(id, 'title')
+	if note ~= nil then
+		return '['..note.title..'](:/'..id..')'
+	end
+
+	-- try folder
+	local folder = api.get_folder(id, 'title')
+	if folder == nil then return nil end
+
+	return '['..folder.title..'](:/'..id..')'
+end
+
 local download_note = function(id)
   if id == '' then return nil end
   local note = api.get_note(id, 'body,title,is_todo,source_url,parent_id')
