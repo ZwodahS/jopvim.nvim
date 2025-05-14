@@ -225,12 +225,12 @@ end
 
 M.open_file_under_cursor = function()
 	local id = vim.fn.expand("<cword>")
-	if M.open_note(id) then return end
-	if M.open_folder(id) then return end
+	if M.open_note(id) then return true end
+	if M.open_folder(id) then return true end
 	id = M.get_markdown_id_under_cursor()
-	if id ~= nil and M.open_note(id) then return end
-	if id ~= nil and M.open_folder(id) then return end
-	print("joplin note/folder not found.")
+	if id ~= nil and M.open_note(id) then return true end
+	if id ~= nil and M.open_folder(id) then return true end
+	return false
 end
 
 M.setup = function(cfg)
