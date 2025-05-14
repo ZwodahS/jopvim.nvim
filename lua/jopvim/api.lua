@@ -72,10 +72,19 @@ M.get_all_folders = function()
     local response = get('/folders', { query = { fields = 'title,id,parent_id', page = page } })
     has_next = response.json.has_more
     for k, fdr in ipairs(response.json.items) do
+      fdr.children = {}
       folders[fdr.id] = fdr
       fdr.type = 2
     end
     page = page + 1
+  end
+  -- reverse index the children
+  -- because joplin don't handle this ??
+  for id, fdr in pairs(folders) do
+    if fdr.parent_id ~= nil then
+      local parent = folders[fdr.parent_id]
+      if parent ~= nil then table.insert(parent.children, fdr.id) end
+    end
   end
   return folders
 end

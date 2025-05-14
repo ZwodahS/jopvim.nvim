@@ -126,11 +126,20 @@ local download_folder = function(id)
 	table.insert(data, '-- This is a folder. Any changes made here are temporary.')
   table.insert(data, '```')
 
-	-- Tue 15:53:59 06 May 2025
-	-- Not sure yet how best to get and display folder. Might have to do it from cache as joplin
-	-- does not provide the api to get folders in folder.
   table.insert(data, '')
-  table.insert(data, '# Notes in Folder')
+	-- for folders, we have to use the index instead
+	local index = index.get()
+	local cache_folder = index[id]
+	if cache_folder ~= nil and #cache_folder.children > 0 then
+		table.insert(data, '# Sub Notebooks')
+		for _, child in pairs(cache_folder.children) do
+			local f = index[child]
+			table.insert(data, '- ['..f.title..'](:/'..child..')')
+		end
+	end
+
+	table.insert(data, '')
+	table.insert(data, '# Notes in Folder')
 	local folder_notes = api.get_notes_in_folders(id)
 	for key, note in pairs(folder_notes) do
 		table.insert(data, '- ['..note.title..'](:/'..key..')')
@@ -152,7 +161,7 @@ end
 M.open_folder = function(id)
   local path = download_folder(id)
   if path ~= nil then
-		vim.cmd("edit" .. path)
+		vim.cmd("view" .. path)
 		return true
 	end
 	return false
