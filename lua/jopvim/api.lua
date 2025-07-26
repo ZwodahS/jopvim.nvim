@@ -21,8 +21,8 @@ local function post(url, request)
   request.query.token = c.config.token
   local response = curl.post(url, request)
 
-  if response.status == 200 then
-    response.json = vim.fn.json_decode(response.body)
+  if response.status == 200 and response.body ~= "" then
+		response.json = vim.fn.json_decode(response.body)
   end
   return response
 end
@@ -50,6 +50,20 @@ local function get(url, request)
   local response = curl.get(url, request)
 
   if response.status == 200 then
+    response.json = vim.fn.json_decode(response.body)
+  end
+  return response
+end
+
+local function delete(url, request)
+  url = get_serverURL() .. url
+  if request.query == nil then
+    request.query = {}
+  end
+  request.query.token = c.config.token
+  local response = curl.delete(url, request)
+
+  if response.status == 200 and response.body ~= "" then
     response.json = vim.fn.json_decode(response.body)
   end
   return response
@@ -138,6 +152,68 @@ M.create_note = function(parent_id, title, body)
     return response.json.id
   end
   return nil
+end
+
+local tags_by_name = nil
+M.get_tag = function(tag_str, create)
+	if tags_by_name == nil then
+		local response = get("/tags", {})
+		tags_by_name = {}
+		if response.status == 200 then
+			for _, item in pairs(response.json["items"]) do
+				tags_by_name[item["title"]] = item
+			end
+		end
+	end
+	local t = tags_by_name[tag_str]
+	if t == nil and create == true then
+		local r = post("/tags", { body = vim.fn.json_encode({ title = tag_str }) })
+		tags_by_name[tag_str] = r.json
+		t = r.json
+	end
+	return t
+end
+
+M.get_tags_for_notes = function(id)
+  local response = get("/notes/"..id.."/tags", {})
+  if response.status ~= 200 then return nil end
+  local data = response.json
+	local tags = {}
+  for i, item in pairs(data["items"]) do
+    table.insert(tags, item["title"])
+  end
+  return tags
+end
+
+M.add_tag_to_note = function(tag_id, note_id)
+  local response = post("/tags/"..tag_id.."/notes", { body = vim.fn.json_encode({id = note_id})})
+end
+
+M.remove_tag_from_note = function(tag_id, note_id)
+	local response = delete("/tags/"..tag_id.."/notes/"..note_id, {})
+end
+
+M.sync_note_tags = function(note_id, tag_strs)
+	local tag_names = {}
+	for str in string.gmatch(tag_strs, "([^"..",".."]+)") do
+		table.insert(tag_names, str)
+	end
+	local tags_by_id = {}
+	for i, tag_str in pairs(tag_names) do
+		tags_by_id[tag_str] = true
+
+		local tag = M.get_tag(tag_str, true)
+		M.add_tag_to_note(tag["id"], note_id)
+	end
+
+	local existing_tags = M.get_tags_for_notes(note_id)
+	-- delete the tags that got deleted
+	for i, tag_str in pairs(existing_tags) do
+		if tags_by_id[tag_str] == nil then
+			local tag = M.get_tag(tag_str, true)
+			local r = M.remove_tag_from_note(tag["id"], note_id)
+		end
+	end
 end
 
 return M

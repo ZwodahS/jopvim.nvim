@@ -61,6 +61,10 @@ M.on_bufWritePost = function()
 		end
 		api.update_note(id, note)
 		index.update_note(id, note)
+		local tags = metadata["tags"]
+		if tags ~= nil then
+			api.sync_note_tags(id, tags)
+		end
 	elseif metadata["type"] == "folder" then
 		-- folder don't get updated for now
 	end
@@ -85,6 +89,7 @@ end
 local download_note = function(id)
   if id == '' then return nil end
   local note = api.get_note(id, 'body,title,is_todo,source_url,parent_id')
+	local tags = api.get_tags_for_notes(id)
 
   if note == nil then return nil end
 
@@ -94,12 +99,16 @@ local download_note = function(id)
 	table.insert(data, 'type:note')
   table.insert(data, 'title:'..note.title)
   table.insert(data, 'is_todo:'..note.is_todo)
+	if tags ~= nil and #tags > 0 then
+		table.insert(data, 'tags:'..table.concat(tags, ","))
+	end
   table.insert(data, '')
   table.insert(data, '-- id: '..id)
   table.insert(data, '-- link: [](:/'..id..')')
 	if note.parent_id ~= nil then
 		table.insert(data, '-- directory: '..'['..full_path..'](:/'..note.parent_id..')')
 	end
+
   table.insert(data, '```')
   table.insert(data, note.body)
 
