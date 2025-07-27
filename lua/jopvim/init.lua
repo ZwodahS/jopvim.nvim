@@ -133,6 +133,7 @@ local download_folder = function(id)
 		table.insert(data, '-- directory: '..'['..full_path..']('..folder.parent_id..')')
 	end
 	table.insert(data, '-- This is a folder. Any changes made here are temporary.')
+	table.insert(data, '-- <C-N> to create a new note in this folder.')
   table.insert(data, '```')
 
   table.insert(data, '')
@@ -171,6 +172,8 @@ M.open_folder = function(id)
   local path = download_folder(id)
   if path ~= nil then
 		vim.cmd("view" .. path)
+		local buf = vim.api.nvim_get_current_buf()
+		vim.api.nvim_buf_set_keymap(buf, "n", "<C-N>", '<cmd>lua require("jopvim").create_note("'..id..'","","",true)<CR>', {})
 		return true
 	end
 	return false
