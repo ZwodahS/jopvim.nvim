@@ -246,6 +246,7 @@ end
 
 M.open_file_under_cursor = function()
 	local id = vim.fn.expand("<cword>")
+	if id == "." then return false end -- pressing enter on "." also open a note, which is not a good idea.
 	if M.open_note(id) then return true end
 	if M.open_folder(id) then return true end
 	id = M.get_markdown_id_under_cursor()
