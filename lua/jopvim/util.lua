@@ -2,7 +2,8 @@ local M = {}
 
 local path_sep = vim.loop.os_uname().sysname == "Windows" and "\\" or "/"
 M.joinPath = function(...)
-  return table.concat(vim.tbl_flatten({ ... }), path_sep)
+	return table.concat(vim.iter({...}):flatten():totable(), path_sep)
+  -- return table.concat(vim.tbl_flatten({ ... }), path_sep)
 end
 
 M.get_root_dir = function()
